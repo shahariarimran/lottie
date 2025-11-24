@@ -3,12 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lottie Preview Gallery</title>
+  <title>Lottie Animation Showcase</title>
 
-  <!-- Lottie Player -->
-  <script src="https://unpkg.com/lottie-web/build/player/lottie.min.js"></script>
+  <!-- Lottie -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.7.4/lottie.min.js"></script>
 
   <style>
+    /* ---------- THEME ---------- */
+    :root {
+      --bg: #ffffff;
+      --text: #222;
+      --card: #f3f3f3;
+      --border: #ddd;
+    }
+
+    body.dark {
+      --bg: #1a1a1a;
+      --text: #ffffff;
+      --card: #2a2a2a;
+      --border: #444;
+    }
+
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -17,62 +32,102 @@
       transition: 0.3s;
     }
 
-    :root {
-      --bg: #ffffff;
-      --text: #111;
-      --card-bg: #f4f4f4;
-    }
-
-    .dark {
-      --bg: #111;
-      --text: #f4f4f4;
-      --card-bg: #1d1d1d;
-    }
-
+    /* ---------- HEADER ---------- */
     header {
       display: flex;
       justify-content: space-between;
-      padding: 20px;
+      align-items: center;
+      padding: 16px 20px;
       font-size: 20px;
+      font-weight: bold;
+      border-bottom: 1px solid var(--border);
     }
 
-    /* Gallery Grid */
-    .gallery {
+    /* ---------- TOGGLE SWITCH ---------- */
+    .toggle {
+      width: 60px;
+      height: 30px;
+      background: var(--card);
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      position: relative;
+      transition: 0.3s;
+    }
+
+    .toggle-circle {
+      width: 24px;
+      height: 24px;
+      background: #ffcf33;
+      border-radius: 50%;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      transition: 0.3s;
+    }
+
+    body.dark .toggle-circle {
+      transform: translateX(30px);
+      background: #d4d4d4;
+    }
+
+    /* ---------- GRID ---------- */
+    .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 20px;
       padding: 20px;
     }
 
-    .thumb {
-      background: var(--card-bg);
-      padding: 10px;
-      border-radius: 10px;
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 16px;
       cursor: pointer;
-      transition: 0.25s;
+      transition: 0.3s;
     }
 
-    .thumb:hover {
-      transform: scale(1.05);
+    .card:hover {
+      transform: scale(1.03);
     }
 
-    /* Modal Fullscreen */
+    .title {
+      margin-top: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    /* ---------- LOADER ---------- */
+    .loader {
+      text-align: center;
+      padding: 30px;
+    }
+
+    /* ---------- FULLSCREEN MODAL ---------- */
     .modal {
       position: fixed;
       inset: 0;
+      background: rgba(0,0,0,0.85);
       display: none;
-      background: rgba(0,0,0,0.8);
       justify-content: center;
       align-items: center;
       padding: 20px;
       z-index: 9999;
+      animation: fadeIn 0.25s;
     }
 
     .modal.show {
       display: flex;
     }
 
-    .modal-content {
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-inner {
       width: 90%;
       height: 90%;
       position: relative;
@@ -82,17 +137,17 @@
       position: absolute;
       top: -40px;
       right: 0;
-      font-size: 30px;
-      color: white;
+      font-size: 40px;
       cursor: pointer;
+      color: #fff;
     }
 
-    /* Navigation Arrows */
+    /* ---------- ARROWS ---------- */
     .arrow {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 40px;
+      font-size: 50px;
       color: white;
       cursor: pointer;
       user-select: none;
@@ -100,119 +155,122 @@
 
     .arrow.left { left: -60px; }
     .arrow.right { right: -60px; }
+
+    @media(max-width: 600px) {
+      .arrow.left { left: 10px; }
+      .arrow.right { right: 10px; }
+    }
   </style>
 </head>
 
 <body>
 
-  <!-- Header -->
+  <!-- HEADER -->
   <header>
-    <div><strong>Lottie Gallery</strong></div>
-    <label>
-      <input id="themeToggle" type="checkbox" />
-      Dark Mode
-    </label>
+    Lottie Animation Showcase
+    <div id="themeToggle" class="toggle">
+      <div class="toggle-circle"></div>
+    </div>
   </header>
 
-  <!-- Gallery -->
-  <div class="gallery" id="gallery"></div>
+  <!-- LOADER -->
+  <div id="loader" class="loader">Loading animations...</div>
 
-  <!-- Fullscreen Modal -->
+  <!-- GALLERY GRID -->
+  <div id="grid" class="grid"></div>
+
+  <!-- FULLSCREEN MODAL -->
   <div id="modal" class="modal">
-    <div class="arrow left" id="prev">&#10094;</div>
+    <div class="arrow left" id="prevArrow">&#10094;</div>
 
-    <div class="modal-content">
-      <div class="close-btn" id="closeModal">&#10005;</div>
-      <div id="fullPlayer" style="width:100%; height:100%;"></div>
+    <div class="modal-inner">
+      <div class="close-btn" id="closeBtn">&#10005;</div>
+      <div id="modalAnimation" style="width:100%; height:100%;"></div>
     </div>
 
-    <div class="arrow right" id="next">&#10095;</div>
+    <div class="arrow right" id="nextArrow">&#10095;</div>
   </div>
 
   <script>
     const API_URL = "https://api.github.com/repos/shahariarimran/lottie/contents/animations";
+    const grid = document.getElementById("grid");
+    const loader = document.getElementById("loader");
+
+    let animations = [];
+    let currentIndex = 0;
 
     async function loadAnimations() {
-      try {
-        const response = await fetch(API_URL);
-        const files = await response.json();
+      const response = await fetch(API_URL);
+      const files = await response.json();
 
-        const grid = document.getElementById("grid");
+      animations = files.filter(f => f.name.endsWith(".json"));
 
-        files
-          .filter(file => file.name.endsWith(".json"))
-          .forEach(file => {
-            const card = document.createElement("div");
-            card.className = "card";
-            card.innerHTML = `
-              <div id="anim-${file.name}" style="height: 200px;"></div>
-              <div class="title">${file.name.replace(".json", "")}</div>
-            `;
+      animations.forEach((file, index) => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div id="thumb-${index}" style="height:200px;"></div>
+          <div class="title">${file.name.replace(".json","")}</div>
+        `;
 
-            grid.appendChild(card);
+        grid.appendChild(card);
 
-    // Create thumbnail cards
-    jsonFiles.forEach((file, index) => {
-      const div = document.createElement("div");
-      div.className = "thumb";
-      div.innerHTML = `<div id="anim${index}" style="width:100%;height:150px;"></div>`;
-      div.onclick = () => openModal(index);
-      gallery.appendChild(div);
+        // Thumbnail animation
+        lottie.loadAnimation({
+          container: document.getElementById(`thumb-${index}`),
+          renderer: "svg",
+          loop: true,
+          autoplay: true,
+          path: file.download_url
+        });
 
-      lottie.loadAnimation({
-        container: document.getElementById(`anim${index}`),
-        renderer: "svg",
-        loop: true,
-        autoplay: true,
-        path: folder + file
+        card.onclick = () => openModal(index);
       });
-    });
 
-    // Modal Logic
-    let currentIndex = 0;
-    const modal = document.getElementById("modal");
-    const fullPlayerContainer = document.getElementById("fullPlayer");
+      loader.style.display = "none";
+    }
 
-    function openModal(i) {
-      currentIndex = i;
+    function openModal(index) {
+      currentIndex = index;
+      const modal = document.getElementById("modal");
       modal.classList.add("show");
-      loadFullAnimation(i);
+
+      loadFullAnimation();
     }
 
-    function loadFullAnimation(i) {
-      fullPlayerContainer.innerHTML = "";
+    function loadFullAnimation() {
+      const container = document.getElementById("modalAnimation");
+      container.innerHTML = "";
+
       lottie.loadAnimation({
-        container: fullPlayerContainer,
+        container,
         renderer: "svg",
         loop: true,
         autoplay: true,
-        path: folder + jsonFiles[i]
+        path: animations[currentIndex].download_url
       });
     }
 
-    document.getElementById("closeModal").onclick = () => {
-      modal.classList.remove("show");
+    document.getElementById("closeBtn").onclick = () => {
+      document.getElementById("modal").classList.remove("show");
     };
 
-    // Navigation Arrows
-    document.getElementById("prev").onclick = () => {
-      currentIndex = (currentIndex - 1 + jsonFiles.length) % jsonFiles.length;
-      loadFullAnimation(currentIndex);
+    document.getElementById("prevArrow").onclick = () => {
+      currentIndex = (currentIndex - 1 + animations.length) % animations.length;
+      loadFullAnimation();
     };
 
-    document.getElementById("next").onclick = () => {
-      currentIndex = (currentIndex + 1) % jsonFiles.length;
-      loadFullAnimation(currentIndex);
+    document.getElementById("nextArrow").onclick = () => {
+      currentIndex = (currentIndex + 1) % animations.length;
+      loadFullAnimation();
     };
 
-    // Light/Dark Mode Toggle
-    document.getElementById("themeToggle").onchange = (e) => {
-      if (e.target.checked) {
-        document.body.classList.add("dark");
-      } else {
-        document.body.classList.remove("dark");
-      }
+    // Dark/Light Mode
+    document.getElementById("themeToggle").onclick = () => {
+      document.body.classList.toggle("dark");
     };
+
+    loadAnimations();
   </script>
 
 </body>
