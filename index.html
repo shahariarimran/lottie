@@ -130,13 +130,26 @@
   </div>
 
   <script>
-    const folder = "https://raw.githubusercontent.com/shahariarimran/lottie/refs/heads/main/animations/";
-    const jsonFiles = [
-      "MA_Batch-2_4-Draw Management.json",
-      // Add more filenames automatically later if you want
-    ];
+    const API_URL = "https://api.github.com/repos/shahariarimran/lottie/contents/animations";
 
-    const gallery = document.getElementById("gallery");
+    async function loadAnimations() {
+      try {
+        const response = await fetch(API_URL);
+        const files = await response.json();
+
+        const grid = document.getElementById("grid");
+
+        files
+          .filter(file => file.name.endsWith(".json"))
+          .forEach(file => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+              <div id="anim-${file.name}" style="height: 200px;"></div>
+              <div class="title">${file.name.replace(".json", "")}</div>
+            `;
+
+            grid.appendChild(card);
 
     // Create thumbnail cards
     jsonFiles.forEach((file, index) => {
