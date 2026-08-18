@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lottie Gallery</title>
 
-  <!-- Lottie -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.7.4/lottie.min.js"></script>
+  <!-- LottieFiles / dotLottie Web Player -->
+  <script type="module">
+    import { DotLottie } from "https://cdn.jsdelivr.net/npm/@lottiefiles/dotlottie-web/+esm";
+    window.DotLottie = DotLottie;
+  </script>
 
   <style>
     /* ---------- THEME ---------- */
@@ -199,6 +202,29 @@
     let animations = [];
     let currentIndex = 0;
 
+    /*
+     * New LottieFiles / dotLottie player
+     *
+     * This replaces the old:
+     * lottie.loadAnimation(...)
+     */
+    function createLottie(container, url) {
+      const canvas = document.createElement("canvas");
+
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+      canvas.style.display = "block";
+
+      container.appendChild(canvas);
+
+      return new DotLottie({
+        canvas: canvas,
+        src: url,
+        autoplay: true,
+        loop: true
+      });
+    }
+
     async function loadAnimations() {
       const response = await fetch(API_URL);
       const files = await response.json();
@@ -208,6 +234,7 @@
       animations.forEach((file, index) => {
         const card = document.createElement("div");
         card.className = "card";
+
         card.innerHTML = `
           <div id="thumb-${index}" style="height:200px;"></div>
           <div class="title">${file.name.replace(".json","")}</div>
@@ -216,13 +243,10 @@
         grid.appendChild(card);
 
         // Thumbnail animation
-        lottie.loadAnimation({
-          container: document.getElementById(`thumb-${index}`),
-          renderer: "svg",
-          loop: true,
-          autoplay: true,
-          path: file.download_url
-        });
+        createLottie(
+          document.getElementById(`thumb-${index}`),
+          file.download_url
+        );
 
         card.onclick = () => openModal(index);
       });
@@ -232,6 +256,7 @@
 
     function openModal(index) {
       currentIndex = index;
+
       const modal = document.getElementById("modal");
       modal.classList.add("show");
 
@@ -240,15 +265,13 @@
 
     function loadFullAnimation() {
       const container = document.getElementById("modalAnimation");
+
       container.innerHTML = "";
 
-      lottie.loadAnimation({
+      createLottie(
         container,
-        renderer: "svg",
-        loop: true,
-        autoplay: true,
-        path: animations[currentIndex].download_url
-      });
+        animations[currentIndex].download_url
+      );
     }
 
     document.getElementById("closeBtn").onclick = () => {
@@ -256,12 +279,16 @@
     };
 
     document.getElementById("prevArrow").onclick = () => {
-      currentIndex = (currentIndex - 1 + animations.length) % animations.length;
+      currentIndex =
+        (currentIndex - 1 + animations.length) % animations.length;
+
       loadFullAnimation();
     };
 
     document.getElementById("nextArrow").onclick = () => {
-      currentIndex = (currentIndex + 1) % animations.length;
+      currentIndex =
+        (currentIndex + 1) % animations.length;
+
       loadFullAnimation();
     };
 
